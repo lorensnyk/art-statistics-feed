@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 def fetch_sothebys():
     url = "https://www.sothebys.com/en/press"
@@ -7,7 +8,8 @@ def fetch_sothebys():
     soup = BeautifulSoup(res.text, "html.parser")
 
     items = soup.select("article.teaser-card")[:5]
-    html = '<section id="auction-highlights">\n<h2>Recent Sotheby’s Auction Highlights</h2>\n'
+    current_month = datetime.now().strftime("%B")
+    html = f'<section id="auction-highlights">\n<h2>Sotheby’s {current_month} Auction Highlights</h2>\n'
     for item in items:
         title = item.select_one(".teaser-card__title").text.strip()
         link = "https://www.sothebys.com" + item.select_one("a")["href"]
@@ -29,7 +31,7 @@ def fetch_tate():
     soup = BeautifulSoup(res.text, "html.parser")
 
     articles = soup.select("div.card--content")[:5]
-    html = '<section id="tate-highlights">\n<h2>Highlights from Tate Etc. Magazine</h2>\n'
+    html = '<section id="tate-highlights">\n<h2>Tate Etc. Highlights</h2>\n'
     for art in articles:
         title = art.select_one("a").text.strip()
         link = "https://www.tate.org.uk" + art.select_one("a")["href"]
@@ -48,7 +50,7 @@ def fetch_va():
     soup = BeautifulSoup(res.text, "html.parser")
 
     articles = soup.select("div.teaser__content")[:5]
-    html = '<section id="va-highlights">\n<h2>From the V&A Magazine</h2>\n'
+    html = '<section id="va-highlights">\n<h2>V&A Magazine Reflections</h2>\n'
     for art in articles:
         title = art.select_one("h3").text.strip()
         link = "https://www.vam.ac.uk" + art.find("a")["href"]
