@@ -1,75 +1,39 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-
-def fetch_sothebys():
-    url = "https://www.sothebys.com/en/press"
-    res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(res.text, "html.parser")
-
-    items = soup.select("article.teaser-card")[:5]
-    current_month = datetime.now().strftime("%B")
-    html = f'<section id="auction-highlights">\n<h2>Sotheby’s {current_month} Auction Highlights</h2>\n'
-    for item in items:
-        title = item.select_one(".teaser-card__title").text.strip()
-        link = "https://www.sothebys.com" + item.select_one("a")["href"]
-        date = item.select_one(".teaser-card__date")
-        date_text = date.text.strip() if date else "No date listed"
-        html += f'''
-<article class="auction-highlight">
-  <h3>{title}</h3>
-  <p>{date_text}</p>
-  <a href="{link}" target="_blank" rel="noopener">Read More</a>
-</article>
-'''
-    html += "\n</section>"
-    return html
 
 def fetch_tate():
     url = "https://www.tate.org.uk/tate-etc"
-    res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(res.text, "html.parser")
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    articles = soup.select("div.card--content")[:5]
-    html = '<section id="tate-highlights">\n<h2>Tate Etc. Highlights</h2>\n'
-    for art in articles:
-        title = art.select_one("a").text.strip()
-        link = "https://www.tate.org.uk" + art.select_one("a")["href"]
-        html += f'''
-<article class="tate-highlight">
-  <h3>{title}</h3>
-  <a href="{link}" target="_blank" rel="noopener">Read More</a>
-</article>
-'''
-    html += "\n</section>"
-    return html
+    tate_html = "<h2>Tate Etc. Highlights</h2>\n"
+    cards = soup.select("div.card__content")[:5]  # ← LIMIT TO 5
 
-def fetch_va():
-    url = "https://www.vam.ac.uk/articles/v-and-a-magazine"
-    res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(res.text, "html.parser")
+    for card in cards:
+        title_tag = card.select_one("h2.card__title")
+        summary_tag = card.select_one("p.card__description")
 
-    articles = soup.select("div.teaser__content")[:5]
-    html = '<section id="va-highlights">\n<h2>V&A Magazine Reflections</h2>\n'
-    for art in articles:
-        title = art.select_one("h3").text.strip()
-        link = "https://www.vam.ac.uk" + art.find("a")["href"]
-        summary = art.select_one("p").text.strip() if art.select_one("p") else ""
-        html += f'''
-<article class="va-highlight">
-  <h3>{title}</h3>
-  <p>{summary}</p>
-  <a href="{link}" target="_blank" rel="noopener">Read More</a>
-</article>
-'''
-    html += "\n</section>"
-    return html
+        if title_tag:
+            title = title_tag.get_text(strip=True)
+            link = title_tag.find("a")
+            href = link["href"] if link and link.has_attr("href") else "#"
+            full_url = f"https://www.tate.org.uk{href}" if href.startswith("/") else href
+            tate_html += f'<p><strong><a href="{full_url}" target="_blank">{title}</a></strong></p>\n'
+        if summary_tag:
+            summary = summary_tag.get_text(strip=True)
+            tate_html += f"<p>{summary}</p>\n"
+
+    return tate_html
+
+
+def generate_html():
+    html_content = "<html><body>\n"
+    html_content += fetch_tate()
+    html_content += "</body></html>"
+
+    with open("art_statistics_snippet.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+
 
 if __name__ == "__main__":
-    sothebys = fetch_sothebys()
-    tate = fetch_tate()
-    va = fetch_va()
-
-    final_html = f"{sothebys}\n\n{tate}\n\n{va}"
-    with open("art_statistics_snippet.html", "w", encoding="utf-8") as f:
-        f.write(final_html)
+    generate_html()
