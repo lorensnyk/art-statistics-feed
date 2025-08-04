@@ -24,7 +24,7 @@ jobs:
         run: python generate_art_statistics.py
 
       - name: Upload generated HTML
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: art-snippet
           path: art_statistics_snippet.html
